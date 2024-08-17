@@ -3,7 +3,7 @@ resolver = "2"
 members = [
     "ellipsis-client",
     "transaction-utils",
-    "examples/grpc"
+    # "examples/grpc"
 ]
 
 [profile.release]

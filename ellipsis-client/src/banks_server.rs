@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use solana_program_runtime::timings::ExecuteTimings;
-use solana_runtime::bank::{TransactionExecutionDetails, TransactionExecutionResult};
+use solana_accounts_db::transaction_results::{TransactionExecutionDetails, TransactionExecutionResult};
 use solana_sdk::{clock::MAX_PROCESSING_AGE, transaction::VersionedTransaction};
 
 use ellipsis_transaction_utils::{ParsedInnerInstruction, ParsedInstruction, ParsedTransaction};
@@ -86,7 +86,9 @@ fn get_parsed_transaction(
             } else {
                 Some(
                     ixs.iter()
-                        .map(|ix| ParsedInnerInstruction {
+                        .map(|ix| {
+                        let ix = ix.instruction.clone();
+                        ParsedInnerInstruction {
                             parent_index: i,
                             instruction: ParsedInstruction {
                                 program_id: accounts[ix.program_id_index as usize].clone(),
@@ -97,7 +99,7 @@ fn get_parsed_transaction(
                                     .collect(),
                                 data: ix.data.clone(),
                             },
-                        })
+                        }})
                         .collect::<Vec<_>>(),
                 )
             }
@@ -288,7 +290,8 @@ fn simulate_transaction(
         post_simulation_accounts: _,
         units_consumed,
         return_data,
-    } = bank.simulate_transaction_unchecked(sanitized_transaction);
+        ..
+    } = bank.simulate_transaction_unchecked(&sanitized_transaction, true);
     let simulation_details = TransactionSimulationDetails {
         logs,
         units_consumed,
@@ -355,7 +358,7 @@ impl Banks for BanksServer {
             optimistically_confirmed_bank.get_signature_status_slot(&signature);
 
         let confirmations = if r_block_commitment_cache.root() >= slot
-            && r_block_commitment_cache.highest_confirmed_root() >= slot
+            && r_block_commitment_cache.highest_confirmed_slot() >= slot
         {
             None
         } else {
