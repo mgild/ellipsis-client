@@ -142,7 +142,7 @@ pub async fn transaction_subscribe(
         let sender = sender.clone();
         async move {
             println!("Reconnecting to the gRPC server");
-            let mut client = GeyserGrpcClient::connect(endpoint, x_token, None)?;
+            let mut client = GeyserGrpcClient::new(endpoint, x_token)?;
             let (mut subscribe_tx, mut stream) = client.subscribe().await?;
             subscribe_tx
                 .send(SubscribeRequest {
