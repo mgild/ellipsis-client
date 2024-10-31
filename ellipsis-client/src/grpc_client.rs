@@ -142,7 +142,7 @@ pub async fn transaction_subscribe(
         let sender = sender.clone();
         async move {
             println!("Reconnecting to the gRPC server");
-            let mut yellowstone = GeyserGrpcClient::build_from_shared(endpoint)?
+            let mut client = GeyserGrpcClient::build_from_shared(endpoint)?
                 .x_token(Some(x_token))?
                 .connect()
                 .await?;
