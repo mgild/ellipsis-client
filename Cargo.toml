@@ -41,6 +41,6 @@ futures = "0.3.25"
 lazy_static = "1.1.1"
 tarpc = {version = "0.29.0", features = ["full"] }
 tokio-serde = {version = "0.8", features = ["bincode"]}
-yellowstone-grpc-client = { git = "https://github.com/rpcpool/yellowstone-grpc", tag = "v1.15.0+solana.1.17.33"" }
-yellowstone-grpc-proto = { git = "https://github.com/rpcpool/yellowstone-grpc.git", tag = "v1.15.0+solana.1.17.33"" }
+yellowstone-grpc-client = { git = "https://github.com/rpcpool/yellowstone-grpc", tag = "v1.15.0+solana.1.17.33" }
+yellowstone-grpc-proto = { git = "https://github.com/rpcpool/yellowstone-grpc.git", tag = "v1.15.0+solana.1.17.33" }
 backoff = { version = "0.4.0", features = ["tokio"] }
