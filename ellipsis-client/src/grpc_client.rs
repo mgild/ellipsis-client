@@ -107,101 +107,101 @@ impl YellowstoneTransaction {
     }
 }
 
-pub async fn transaction_subscribe(
-    endpoint: String,
-    x_token: Option<String>,
-    sender: Sender<ParsedTransaction>,
-    accounts_to_include: Vec<Pubkey>,
-    accounts_to_exclude: Vec<Pubkey>,
-) -> anyhow::Result<()> {
-    let mut transactions = HashMap::new();
-    transactions.insert(
-        "client".to_string(),
-        SubscribeRequestFilterTransactions {
-            vote: None,
-            failed: Some(false),
-            signature: None,
-            account_include: accounts_to_include
-                .into_iter()
-                .map(|x| x.to_string())
-                .collect(),
-            account_exclude: accounts_to_exclude
-                .into_iter()
-                .map(|x| x.to_string())
-                .collect(),
-            account_required: vec![]
-        },
-    );
+// pub async fn transaction_subscribe(
+//     endpoint: String,
+//     x_token: Option<String>,
+//     sender: Sender<ParsedTransaction>,
+//     accounts_to_include: Vec<Pubkey>,
+//     accounts_to_exclude: Vec<Pubkey>,
+// ) -> anyhow::Result<()> {
+//     let mut transactions = HashMap::new();
+//     transactions.insert(
+//         "client".to_string(),
+//         SubscribeRequestFilterTransactions {
+//             vote: None,
+//             failed: Some(false),
+//             signature: None,
+//             account_include: accounts_to_include
+//                 .into_iter()
+//                 .map(|x| x.to_string())
+//                 .collect(),
+//             account_exclude: accounts_to_exclude
+//                 .into_iter()
+//                 .map(|x| x.to_string())
+//                 .collect(),
+//             account_required: vec![]
+//         },
+//     );
 
-    // The default exponential backoff strategy intervals:
-    // [500ms, 750ms, 1.125s, 1.6875s, 2.53125s, 3.796875s, 5.6953125s,
-    // 8.5s, 12.8s, 19.2s, 28.8s, 43.2s, 64.8s, 97s, ... ]
-    retry(ExponentialBackoff::default(), move || {
-        let (endpoint, x_token) = (endpoint.clone(), x_token.clone());
-        let transactions = transactions.clone();
-        let sender = sender.clone();
-        async move {
-            println!("Reconnecting to the gRPC server");
-            let mut client = GeyserGrpcClient::build_from_shared(endpoint)?
-                .x_token(Some(x_token))?
-                .connect()
-                .await?;
+//     // The default exponential backoff strategy intervals:
+//     // [500ms, 750ms, 1.125s, 1.6875s, 2.53125s, 3.796875s, 5.6953125s,
+//     // 8.5s, 12.8s, 19.2s, 28.8s, 43.2s, 64.8s, 97s, ... ]
+//     retry(ExponentialBackoff::default(), move || {
+//         let (endpoint, x_token) = (endpoint.clone(), x_token.clone());
+//         let transactions = transactions.clone();
+//         let sender = sender.clone();
+//         async move {
+//             println!("Reconnecting to the gRPC server");
+//             let mut client = GeyserGrpcClient::build_from_shared(endpoint)?
+//                 .x_token(Some(x_token))?
+//                 .connect()
+//                 .await?;
 
-            let (mut subscribe_tx, mut stream) = client.subscribe().await?;
-            subscribe_tx
-                .send(SubscribeRequest {
-                    slots: HashMap::new(),
-                    accounts: HashMap::new(),
-                    transactions,
-                    blocks: HashMap::new(),
-                    blocks_meta: HashMap::new(),
-                    commitment: None,
-                    accounts_data_slice: vec![],
-                    ..Default::default()
-                })
-                .await
-                .map_err(GeyserGrpcClientError::SubscribeSendError)?;
+//             let (mut subscribe_tx, mut stream) = client.subscribe().await?;
+//             subscribe_tx
+//                 .send(SubscribeRequest {
+//                     slots: HashMap::new(),
+//                     accounts: HashMap::new(),
+//                     transactions,
+//                     blocks: HashMap::new(),
+//                     blocks_meta: HashMap::new(),
+//                     commitment: None,
+//                     accounts_data_slice: vec![],
+//                     ..Default::default()
+//                 })
+//                 .await
+//                 .map_err(GeyserGrpcClientError::SubscribeSendError)?;
 
-            while let Some(message) = stream.next().await {
-                let parsed_tx = message.map(|msg| match msg.update_oneof {
-                    Some(UpdateOneof::Transaction(transaction)) => {
-                        let slot = transaction.slot;
+//             while let Some(message) = stream.next().await {
+//                 let parsed_tx = message.map(|msg| match msg.update_oneof {
+//                     Some(UpdateOneof::Transaction(transaction)) => {
+//                         let slot = transaction.slot;
 
-                        transaction
-                            .transaction
-                            .and_then(|tx| {
-                                if tx.meta.is_none() {
-                                    println!("Transaction meta is empty");
-                                }
-                                if tx.transaction.is_none() {
-                                    println!("Transaction is empty");
-                                }
-                                let message = tx.transaction.and_then(|x| x.message);
-                                if message.is_none() {
-                                    println!("Transaction message is empty");
-                                }
-                                Some(YellowstoneTransaction {
-                                    slot,
-                                    meta: tx.meta?,
-                                    signature: Signature::new(&tx.signature),
-                                    message: message?,
-                                })
-                            })
-                            .map(|tx| tx.to_parsed_transaction())
-                    }
-                    _ => None,
-                });
-                if let Ok(Some(tx)) = parsed_tx {
-                    if sender.send(tx).await.is_err() {
-                        println!("Failed to send transaction update");
-                    }
-                } else {
-                    continue;
-                }
-            }
-            Ok(())
-        }
-    })
-    .await
-    .map_err(Into::into)
-}
+//                         transaction
+//                             .transaction
+//                             .and_then(|tx| {
+//                                 if tx.meta.is_none() {
+//                                     println!("Transaction meta is empty");
+//                                 }
+//                                 if tx.transaction.is_none() {
+//                                     println!("Transaction is empty");
+//                                 }
+//                                 let message = tx.transaction.and_then(|x| x.message);
+//                                 if message.is_none() {
+//                                     println!("Transaction message is empty");
+//                                 }
+//                                 Some(YellowstoneTransaction {
+//                                     slot,
+//                                     meta: tx.meta?,
+//                                     signature: Signature::new(&tx.signature),
+//                                     message: message?,
+//                                 })
+//                             })
+//                             .map(|tx| tx.to_parsed_transaction())
+//                     }
+//                     _ => None,
+//                 });
+//                 if let Ok(Some(tx)) = parsed_tx {
+//                     if sender.send(tx).await.is_err() {
+//                         println!("Failed to send transaction update");
+//                     }
+//                 } else {
+//                     continue;
+//                 }
+//             }
+//             Ok(())
+//         }
+//     })
+//     .await
+//     .map_err(Into::into)
+// }
