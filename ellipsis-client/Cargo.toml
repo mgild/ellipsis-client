@@ -43,3 +43,7 @@ yellowstone-grpc-proto = { workspace = true }
 backoff = { workspace = true }
 ellipsis-transaction-utils = { version = "0.1.0", path = "../transaction-utils" }
 solana-accounts-db = "1.17"
+
+[patch.crates-io]
+solana_rbpf = { git = "https://github.com/solana-labs/rbpf", tag = "v0.8.5" }
+
